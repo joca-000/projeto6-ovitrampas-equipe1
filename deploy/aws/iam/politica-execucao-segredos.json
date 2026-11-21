@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LerSoOSegredoDoBanco",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "<ARN-DO-SEGREDO-DO-RDS>"
+    }
+  ]
+}

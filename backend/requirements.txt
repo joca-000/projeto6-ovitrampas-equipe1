@@ -1,4 +1,20 @@
-fastapi>=0.115
-uvicorn[standard]>=0.30
-psycopg[binary]>=3.2
-redis>=5.0
+# Dependências da API. Versões FIXAS (==): o build de hoje e o de daqui a um
+# mês instalam exatamente o mesmo código, e o pip-audit (portão de segurança
+# do pipeline) sabe exatamente o que verificar.
+# Para atualizar: troque o número, rode os testes e abra um PR.
+
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+psycopg[binary]==3.3.9
+redis==8.1.0
+
+# Observabilidade (OpenTelemetry). O "distro" traz o comando
+# opentelemetry-instrument, usado no CMD do Dockerfile. Os pacotes
+# "instrumentation-*" ensinam o OpenTelemetry a medir cada biblioteca.
+# As versões 1.45.2 / 0.66b2 andam juntas: atualize todas de uma vez.
+opentelemetry-distro==0.66b2
+opentelemetry-exporter-otlp==1.45.2
+opentelemetry-instrumentation-fastapi==0.66b2
+opentelemetry-instrumentation-psycopg==0.66b2
+opentelemetry-instrumentation-redis==0.66b2
+opentelemetry-instrumentation-logging==0.66b2

@@ -1,0 +1,10 @@
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Guarda só as 10 imagens mais recentes (custo e organização)",
+      "selection": { "tagStatus": "any", "countType": "imageCountMoreThan", "countNumber": 10 },
+      "action": { "type": "expire" }
+    }
+  ]
+}

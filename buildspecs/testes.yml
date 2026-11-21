@@ -1,0 +1,55 @@
+# =====================================================================
+# Portão 2 - Testes funcionais + fitness functions de observabilidade
+#            e de segurança da API
+# Projeto CodeBuild: ovitrampas-testes  (modo PRIVILEGIADO ligado, porque
+# sobe contêineres de Postgres e Redis descartáveis com o docker)
+# =====================================================================
+version: 0.2
+
+env:
+  variables:
+    # Banco e fila DESCARTÁVEIS, que só existem durante este build.
+    # Estas senhas não protegem nada real (o contêiner morre no fim do build).
+    POSTGRES_HOST: 127.0.0.1
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: ovitrampas
+    POSTGRES_USER: ovitrampas
+    POSTGRES_PASSWORD: senha-descartavel-do-ci
+    REDIS_HOST: 127.0.0.1
+    REDIS_PORT: "6379"
+    REDIS_PASSWORD: senha-descartavel-do-ci
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      # requirements-dev.txt já inclui o requirements.txt da API.
+      - pip install --quiet -r backend/requirements-dev.txt
+
+  pre_build:
+    commands:
+      # Imagens oficiais espelhadas no ECR Public (sem limite do Docker Hub).
+      - >-
+        docker run -d --name banco-ci -p 5432:5432
+        -e POSTGRES_DB=$POSTGRES_DB -e POSTGRES_USER=$POSTGRES_USER -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+        public.ecr.aws/docker/library/postgres:16-alpine
+      - >-
+        docker run -d --name fila-ci -p 6379:6379
+        public.ecr.aws/docker/library/redis:7-alpine
+        redis-server --requirepass $REDIS_PASSWORD
+      # Espera o Postgres aceitar conexões (até ~60 s).
+      - for i in $(seq 1 30); do docker exec banco-ci pg_isready -h 127.0.0.1 -U $POSTGRES_USER && break; sleep 2; done
+
+  build:
+    commands:
+      # -v mostra o nome de cada teste no log; --junitxml gera o relatório
+      # que o CodeBuild guarda (histórico das fitness functions).
+      - cd backend && python -m pytest -v --junitxml=../relatorio-testes.xml
+
+reports:
+  # Aparece em CodeBuild > Report groups > ovitrampas-testes-fitness-functions
+  fitness-functions:
+    files:
+      - relatorio-testes.xml
+    file-format: JUNITXML

@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EnviarTracesParaOXRay",
+      "Effect": "Allow",
+      "Action": [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "xray:GetSamplingRules",
+        "xray:GetSamplingTargets",
+        "xray:GetSamplingStatisticSummaries"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EnviarMetricasEmfSoParaOGrupoDeMetricas",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"],
+      "Resource": [
+        "arn:aws:logs:us-east-1:<CONTA>:log-group:/aws/ecs/application/metrics",
+        "arn:aws:logs:us-east-1:<CONTA>:log-group:/aws/ecs/application/metrics:log-stream:*"
+      ]
+    }
+  ]
+}
