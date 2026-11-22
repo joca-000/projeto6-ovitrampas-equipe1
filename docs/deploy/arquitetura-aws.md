@@ -11,7 +11,7 @@ flowchart LR
     U[Técnico / gestor<br/>navegador] -- HTTPS --> CF[CloudFront<br/>certificado TLS]
     CF -- "HTTP + cabeçalho<br/>X-Origin-Verify" --> ALB
 
-    subgraph VPC["VPC ovitrampas (us-east-1)"]
+    subgraph VPC["VPC ovitrampas (us-east-2)"]
         subgraph PUB["Sub-redes públicas (2 AZs)"]
             ALB[Application Load Balancer<br/>SG: só IPs do CloudFront]
             subgraph TASK["Task Fargate ovitrampas-api"]

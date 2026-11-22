@@ -10,7 +10,7 @@ A AV2 cobra deployment na nuvem, arquitetura da solução, pipeline de CI/CD (pe
 
 ## Decisão
 
-1. **Provedor e região:** AWS, `us-east-1`, a mesma dos laboratórios.
+1. **Provedor e região:** AWS, `us-east-2` (Ohio). Os laboratórios usaram `us-east-1`; a conta do grupo foi configurada em Ohio, que tem preços praticamente iguais.
 2. **Execução:** ECS **Fargate**, com um service para a API atrás de um **ALB**, e **CloudFront** na frente para ter HTTPS sem domínio próprio. O worker de ML entra depois como um segundo service, sem ALB.
 3. **Dados:** **RDS PostgreSQL** db.t4g.micro Single-AZ, com a senha gerenciada no **Secrets Manager**. A fila é o **ElastiCache Serverless (Valkey)**, compatível com o protocolo do Redis e com TLS obrigatório.
 4. **Rede sem NAT Gateway:** as tasks ficam em sub-redes **públicas** com IP público, mas o security group só aceita o ALB. Banco e fila ficam em sub-redes **privadas**.

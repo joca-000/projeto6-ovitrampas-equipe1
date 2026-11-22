@@ -2,10 +2,35 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "LerSoOSegredoDoBanco",
+      "Sid": "LoginNoEcr",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "BaixarSoAImagemDaApi",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+      ],
+      "Resource": "arn:aws:ecr:us-east-2:<CONTA>:repository/ovitrampas-api"
+    },
+    {
+      "Sid": "EscreverSoNoLogDaApi",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-2:<CONTA>:log-group:/ecs/ovitrampas-api:*"
+    },
+    {
+      "Sid": "LerSoOsSegredosDaApi",
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
-      "Resource": "<ARN-DO-SEGREDO-DO-RDS>"
+      "Resource": [
+        "<ARN-DO-SEGREDO-DO-RDS>",
+        "<ARN-DO-SEGREDO-VALKEY>"
+      ]
     }
   ]
 }

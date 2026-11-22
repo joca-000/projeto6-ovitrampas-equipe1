@@ -30,7 +30,7 @@ Passo a passo, **pelo console da AWS**, para colocar a API no ar com pipeline de
 
 ## 0. Antes de começar
 
-**Região:** `us-east-1` (Norte da Virgínia), a mesma dos laboratórios. Confira no canto superior direito do console **antes de cada passo**: um recurso criado em outra região "some" para os outros passos.
+**Região:** `us-east-2` (Ohio), onde a conta do grupo foi configurada. (Os laboratórios usaram `us-east-1`; os preços são praticamente iguais.) Confira no canto superior direito do console **antes de cada passo**: um recurso criado em outra região "some" para os outros passos.
 
 **Alerta de custo (obrigatório):** *Billing and Cost Management → Budgets → Create budget → Use a template → Monthly cost budget*. Valor: **US$ 40**. E-mails: de pelo menos duas pessoas do grupo. Faça isso primeiro.
 
@@ -122,15 +122,17 @@ Saída (Outbound): deixe o padrão (tudo liberado).
 - DB instance identifier: `ovitrampas-db`
 - Master username: `ovitrampas_admin`
 - Credentials management: **Managed in AWS Secrets Manager** (a senha é gerada pela AWS e guardada no Secrets Manager. Ninguém do grupo precisa digitá-la ou vê-la)
-- Instance: **db.t4g.micro** · Storage: **gp3, 20 GB**, *storage autoscaling* **desligado**
+- Instance: **db.t4g.micro** · Storage: **gp3, 20 GB** · em *Additional storage configuration*, **desmarque *Enable storage autoscaling*** (vem ligado por padrão, até 1.000 GiB)
 - Availability: **Single-AZ** (é um MVP; veja o custo assumido na ADR-007)
-- Connectivity: VPC `ovitrampas`, **Public access: No**, security group **`sg-ovitrampas-rds`** (remova o `default`)
+- Connectivity: VPC `ovitrampas`, **DB subnet group `ovitrampas-db-privadas`** (veja abaixo), **Public access: No**, security group **`sg-ovitrampas-rds`** (remova o `default`)
+
+> **Crie o DB subnet group antes** (*RDS → Subnet groups → Create DB subnet group*): nome `ovitrampas-db-privadas`, VPC `ovitrampas`, as duas AZs e **só as duas sub-redes com `private` no nome**. Se deixar "Create new DB Subnet Group" na tela do banco, o RDS pode incluir também as sub-redes públicas, e o desenho da arquitetura ("banco em sub-rede privada") deixa de bater com a realidade.
 - Additional configuration → **Initial database name: `ovitrampas`** (sem isso, o banco não é criado)
 - Backup: retenção de 7 dias · Encryption: **ligada** (padrão)
 
 Leva uns 10 minutos. Depois anote:
-- **Endpoint** (aba *Connectivity & security*), ex.: `ovitrampas-db.xxxx.us-east-1.rds.amazonaws.com`
-- **ARN do segredo** (*Configuration → Master credentials ARN*), algo como `arn:aws:secretsmanager:us-east-1:<CONTA>:secret:rds!db-...`
+- **Endpoint** (aba *Connectivity & security*), ex.: `ovitrampas-db.xxxx.us-east-2.rds.amazonaws.com`
+- **ARN do segredo** (*Configuration → Master credentials ARN*), algo como `arn:aws:secretsmanager:us-east-2:<CONTA>:secret:rds!db-...`
 
 > **Rotação da senha:** o segredo gerenciado pelo RDS troca a senha automaticamente (por padrão, a cada 7 dias). A task da API lê a senha **quando inicia**: depois de uma rotação, as tasks antigas continuam com a senha velha e o `/health/ready` passa a dar 503. No MVP, aumente o período em *Secrets Manager → o segredo → Rotation → Edit rotation* para o máximo, e anote na ADR. Depois de uma rotação, *ECS → service → Update → Force new deployment* resolve.
 
@@ -149,7 +151,7 @@ Leva uns 10 minutos. Depois anote:
 - Connectivity: VPC `ovitrampas`, sub-redes **privadas**, security group **`sg-ovitrampas-valkey`**
 - Mantenha os demais padrões.
 
-Anote o **Endpoint** (sem a porta), ex.: `ovitrampas-fila-xxxx.serverless.use1.cache.amazonaws.com`.
+Anote o **Endpoint** (sem a porta), ex.: `ovitrampas-fila-xxxx.serverless.use2.cache.amazonaws.com`.
 
 ### 4b. (Recomendado para Segurança) Usuário e senha na fila
 
@@ -164,7 +166,7 @@ Sem um grupo de usuários, qualquer coisa que passe pelo security group consegue
    { "name": "REDIS_USERNAME", "valueFrom": "<ARN-DO-SEGREDO-VALKEY>:username::" },
    { "name": "REDIS_PASSWORD", "valueFrom": "<ARN-DO-SEGREDO-VALKEY>:password::" }
    ```
-   e acrescente esse ARN na política `politica-execucao-segredos.json` (passo 7.2).
+   O ARN desse segredo já tem lugar na política `politica-execucao-segredos.json` (passo 7.2), no marcador `<ARN-DO-SEGREDO-VALKEY>`.
 
 ---
 
@@ -177,7 +179,7 @@ Sem um grupo de usuários, qualquer coisa que passe pelo security group consegue
 - Depois de criar: *Actions → Edit scan settings*: **Scan on push** (varredura básica gratuita, uma segunda opinião além do Trivy)
 - *Lifecycle policy → Create rule*, ou cole o JSON de [`deploy/aws/ecr-lifecycle.json`](../../deploy/aws/ecr-lifecycle.json): guarda só as 10 imagens mais recentes
 
-Anote a **URI**: `<CONTA>.dkr.ecr.us-east-1.amazonaws.com/ovitrampas-api`.
+Anote a **URI**: `<CONTA>.dkr.ecr.us-east-2.amazonaws.com/ovitrampas-api`.
 
 ---
 
@@ -191,6 +193,10 @@ Criar à mão permite definir **por quanto tempo** os logs ficam guardados. Isso
 |---|---|---|
 | `/ecs/ovitrampas-api` | 14 dias | saída (stdout) da API e do coletor |
 | `/aws/ecs/application/metrics` | 14 dias | métricas que o coletor ADOT envia no formato EMF |
+
+Em cada um: *Retention setting* **2 weeks**, *Log class* **Standard** (a classe *Infrequent Access* não extrai métricas do formato EMF) e *KMS key* vazio.
+
+> **Os nomes não são enfeite.** O `/ecs/ovitrampas-api` está escrito na task definition (`awslogs-group`); se ele não existir, a task nem liga (`ResourceInitializationError ... log group does not exist`), porque a role de execução não tem permissão para criar grupos. O `/aws/ecs/application/metrics` está dentro da configuração padrão do coletor ADOT; se ele não existir, as métricas somem em silêncio. Criados automaticamente, os grupos ficariam com retenção "Never expire".
 
 ---
 
@@ -208,7 +214,9 @@ Criar à mão permite definir **por quanto tempo** os logs ficam guardados. Isso
 *IAM → Roles → Create role → AWS service → CodeBuild*, **sem** políticas gerenciadas. Nome `ovitrampas-codebuild-role`. Depois, *Add permissions → Create inline policy → JSON*: cole [`deploy/aws/iam/politica-codebuild.json`](../../deploy/aws/iam/politica-codebuild.json), trocando `<CONTA>` e o ARN da conexão (o ARN você só terá no passo 8; volte aqui depois).
 
 ### 7.2 Role de execução do ECS
-*Create role → AWS service → Elastic Container Service → **Elastic Container Service Task***. Política gerenciada: **`AmazonECSTaskExecutionRolePolicy`**. Nome `ovitrampas-ecs-execution-role`. Depois, a inline [`politica-execucao-segredos.json`](../../deploy/aws/iam/politica-execucao-segredos.json) com o ARN do segredo do RDS (só **aquele** segredo).
+*Create role → AWS service → Elastic Container Service → **Elastic Container Service Task***, **sem** políticas gerenciadas. Nome `ovitrampas-ecs-execution-role`. Depois, *Add permissions → Create inline policy → JSON*: cole [`politica-execucao-segredos.json`](../../deploy/aws/iam/politica-execucao-segredos.json), trocando `<CONTA>` e os ARNs **completos** dos dois segredos (RDS e, se fez o passo 4b, Valkey; se não fez, apague essa linha e a vírgula da linha de cima). Nome da política: `ovitrampas-ecs-execution-politica`.
+
+> Essa política faz o mesmo que a gerenciada `AmazonECSTaskExecutionRolePolicy`, só que **com cada recurso nomeado**: a gerenciada usa `"Resource": "*"` (qualquer imagem, qualquer log da conta). Aqui a role só baixa a imagem `ovitrampas-api`, só escreve no log `/ecs/ovitrampas-api` e só lê os dois segredos da API. Bom material para a comparação de menor privilégio na apresentação de Segurança.
 
 ### 7.3 Role da task da API
 *Create role → Elastic Container Service Task*, **sem** políticas gerenciadas. Nome `ovitrampas-api-task-role`. Inline: [`politica-task-api-telemetria.json`](../../deploy/aws/iam/politica-task-api-telemetria.json) (troque `<CONTA>`).
@@ -433,7 +441,7 @@ Depois de cada experimento: `git revert` do commit e push.
 
 ## 16. Custos, pausa e limpeza
 
-**Estimativa mensal em `us-east-1`** (preços de tabela; **confiram no [AWS Pricing Calculator](https://calculator.aws/)**, porque os valores mudam):
+**Estimativa mensal em `us-east-2`** (preços de tabela; **confiram no [AWS Pricing Calculator](https://calculator.aws/)**, porque os valores mudam):
 
 | Recurso | Cálculo aproximado | US$/mês |
 |---|---|---|
@@ -451,7 +459,7 @@ Contas novas (criadas depois de 15/07/2025) recebem créditos do free tier, que 
 
 **Pausar sem destruir** (ex.: fim de semana): service com **desired tasks = 0** (zera o Fargate) e *RDS → Actions → Stop temporarily* (a AWS religa sozinha depois de 7 dias). ALB, Valkey e IPs continuam cobrando.
 
-**Limpeza total** (nesta ordem): service ECS (desired 0, depois *Delete*) → cluster → ALB → target group → distribuição CloudFront (*Disable*, esperar, *Delete*) → pipeline e os 3 projetos CodeBuild → bucket `codepipeline-us-east-1-...` (esvaziar e excluir) → ECR → Valkey → RDS (sem snapshot final, se não precisar dos dados) → segredos → log groups → roles → conexão GitHub (e desinstalar o app no GitHub) → VPC. Confiram o Budgets nos dias seguintes.
+**Limpeza total** (nesta ordem): service ECS (desired 0, depois *Delete*) → cluster → ALB → target group → distribuição CloudFront (*Disable*, esperar, *Delete*) → pipeline e os 3 projetos CodeBuild → bucket `codepipeline-us-east-2-...` (esvaziar e excluir) → ECR → Valkey → RDS (sem snapshot final, se não precisar dos dados) → segredos → log groups → roles → conexão GitHub (e desinstalar o app no GitHub) → VPC. Confiram o Budgets nos dias seguintes.
 
 ---
 
@@ -462,6 +470,8 @@ Contas novas (criadas depois de 15/07/2025) recebem créditos do free tier, que 
 | Build falha logo no clone | role do CodeBuild sem `codeconnections:UseConnection` (passo 7.1), ou conexão não está *Available* |
 | `Cannot connect to the Docker daemon` no build | projeto CodeBuild sem **Privileged** |
 | Task para com `ResourceInitializationError ... secrets` | role de execução sem permissão no ARN **exato** do segredo, ou ARN com `:username::` errado |
+| Task para com `CannotPullContainerError ... not authorized` | regra `BaixarSoAImagemDaApi` com região, conta ou nome do repositório errado |
+| Task para com erro de log group | grupo `/ecs/ovitrampas-api` não existe nessa região, ou ARN errado na regra `EscreverSoNoLogDaApi` |
 | Task para com `CannotPullContainerError` | task sem IP público (sub-rede pública + *Public IP* ligado) |
 | `/health` funciona mas `/health/ready` dá 503 | olhe o log: SG do RDS/Valkey sem a regra vinda do `sg-ovitrampas-api`; Valkey sem a porta 6380; `REDIS_TLS` faltando |
 | CloudFront devolve 403 `acesso direto negado` | cabeçalho `X-Origin-Verify` diferente entre CloudFront e regra do ALB |

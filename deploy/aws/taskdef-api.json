@@ -10,7 +10,7 @@
   "containerDefinitions": [
     {
       "name": "api",
-      "image": "<CONTA>.dkr.ecr.us-east-1.amazonaws.com/ovitrampas-api:<TAG-DO-PRIMEIRO-BUILD>",
+      "image": "<CONTA>.dkr.ecr.us-east-2.amazonaws.com/ovitrampas-api:<TAG-DO-PRIMEIRO-BUILD>",
       "essential": true,
       "portMappings": [{ "containerPort": 8000, "protocol": "tcp", "name": "api-8000" }],
       "environment": [
@@ -47,7 +47,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/ovitrampas-api",
-          "awslogs-region": "us-east-1",
+          "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "api"
         }
       }
@@ -61,7 +61,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/ovitrampas-api",
-          "awslogs-region": "us-east-1",
+          "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "adot"
         }
       }

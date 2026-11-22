@@ -2,7 +2,7 @@
 # Portão 3 - Imagem: build, varredura com Trivy e push no ECR
 # Projeto CodeBuild: ovitrampas-imagem  (modo PRIVILEGIADO ligado)
 # Variáveis de ambiente do projeto (configuradas no console):
-#   ECR_REPOSITORY_URI  ex.: 123456789012.dkr.ecr.us-east-1.amazonaws.com/ovitrampas-api
+#   ECR_REPOSITORY_URI  ex.: 123456789012.dkr.ecr.us-east-2.amazonaws.com/ovitrampas-api
 #   CONTAINER_NAME      nome do contêiner na task definition: api
 #
 # Saída: imagedefinitions.json, que a ação de deploy do ECS lê para saber

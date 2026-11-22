@@ -24,7 +24,7 @@
         "ecr:PutImage",
         "ecr:UploadLayerPart"
       ],
-      "Resource": "arn:aws:ecr:us-east-1:<CONTA>:repository/ovitrampas-api"
+      "Resource": "arn:aws:ecr:us-east-2:<CONTA>:repository/ovitrampas-api"
     }
   ]
 }

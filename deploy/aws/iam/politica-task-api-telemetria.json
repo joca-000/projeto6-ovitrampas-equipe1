@@ -18,8 +18,8 @@
       "Effect": "Allow",
       "Action": ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"],
       "Resource": [
-        "arn:aws:logs:us-east-1:<CONTA>:log-group:/aws/ecs/application/metrics",
-        "arn:aws:logs:us-east-1:<CONTA>:log-group:/aws/ecs/application/metrics:log-stream:*"
+        "arn:aws:logs:us-east-2:<CONTA>:log-group:/aws/ecs/application/metrics",
+        "arn:aws:logs:us-east-2:<CONTA>:log-group:/aws/ecs/application/metrics:log-stream:*"
       ]
     }
   ]
