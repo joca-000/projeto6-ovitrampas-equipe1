@@ -395,10 +395,25 @@ Como no laboratório, vale mostrar **o pipeline barrando** problemas, não só o
 | # | Experimento | O que fazer | Resultado esperado | Evidência |
 |---|---|---|---|---|
 | E1 | **Dependência vulnerável** | Acrescente `jinja2==3.1.2` ao `backend/requirements.txt` | Ação **Seguranca** vermelha no pip-audit (CVEs com correção) | C6: log do pip-audit |
-| E2 | **Segredo commitado** | `echo 'AWS_ACCESS_KEY_ID=AKIAQ3EGRSTU7VWXYZ5A' > backend/config_local.py` (chave **falsa** do kit) | **Seguranca** vermelha no gitleaks, valor mascarado. Apagar o arquivo **não** resolve (o histórico guarda): crie um `.gitleaksignore` com o *Fingerprint* do log e a justificativa, como na Seção 10 da apostila | C7 e C8 |
+| E2 | **Segredo commitado** | Crie `backend/config_local.py` com a chave **falsa** do kit (comando abaixo da tabela) | **Seguranca** vermelha no gitleaks, valor mascarado. Apagar o arquivo **não** resolve (o histórico guarda): crie um `.gitleaksignore` com o *Fingerprint* do log e a justificativa, como na Seção 10 da apostila | C7 e C8 |
 | E3 | **Regressão de observabilidade** | Troque o corpo do `/health/ready` pela versão "otimizada" com threads (abaixo) | **Testes** vermelho com `o span do banco não está no mesmo trace da requisição`; **Imagem** e **Deploy** não rodam; o ECS continua na revisão anterior | C9 |
 | E4 | **Rollback automático** (opcional) | No `backend/Dockerfile`, troque `--port 8000` por `--port 8001` | Testes passam (não usam o Dockerfile), o deploy roda, o ALB não acha a API, e o **circuit breaker** volta para a revisão anterior | C10: eventos do service |
 | E5 | **Falha investigada pela telemetria** | Remova temporariamente a regra de entrada do `sg-ovitrampas-rds` | `/health/ready` passa a dar 503, o alarme de 5xx dispara e o log mostra `falha ao conectar no PostgreSQL` com `trace_id`. Abrindo esse trace: ~3 s de duração (o `connect_timeout`), só o span `PING` e **nenhum** `SELECT`, porque a consulta nem chegou a acontecer. Recoloque a regra | O5 |
+
+Comando do E2. A chave é montada **na hora** em duas partes, para que ela nunca fique escrita inteira neste roteiro. Se ficasse, o próprio gitleaks barraria o roteiro (foi o que aconteceu na primeira execução do pipeline, e virou a exceção registrada no `.gitleaksignore`):
+
+```bash
+# Git Bash / Linux / macOS
+PREFIXO=AKIA
+echo "AWS_ACCESS_KEY_ID=${PREFIXO}Q3EGRSTU7VWXYZ5A" > backend/config_local.py
+```
+
+```powershell
+# Windows PowerShell
+"AWS_ACCESS_KEY_ID=" + "AKIA" + "Q3EGRSTU7VWXYZ5A" | Out-File backend/config_local.py -Encoding ascii
+```
+
+O arquivo gerado contém a chave inteira (falsa), e é ele que o gitleaks deve barrar no experimento.
 
 Código do E3 (a "otimização" que quebra a observabilidade sem quebrar a funcionalidade):
 
