@@ -8,5 +8,5 @@
 # gitleaks na primeira execução do pipeline (22/11/2026). Corrigida no commit
 # seguinte (a chave passou a ser montada na hora, em duas partes), mas continua
 # no histórico do Git, por isso a exceção.
-# Responsável: <nome do integrante>. Revisar em: 05/12/2026 (SR2).
+# Responsável: joca-000. Revisar em: 05/12/2026 (SR2).
 6a29eb03ff6966ae54c0be2a2f9c4535f1aafac7:docs/deploy/roteiro-aws.md:aws-access-token:390
