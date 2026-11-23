@@ -1,6 +1,6 @@
 # ADR-007: Implantação na AWS com ECS Fargate, CodePipeline e OpenTelemetry
 
-- **Status:** Proposta (21/11/2026). Vira "Aceita" quando o grupo revisar o PR.
+- **Status:** Aceita (23/11/2026).
 - **Decisores:** Grupo 1 — Projeto 6
 - **Relação com outras ADRs:** implanta a arquitetura da ADR-001 (API + worker + fila) com as fotos no PostgreSQL (ADR-006).
 
