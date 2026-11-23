@@ -26,3 +26,4 @@ python -m pytest -v
 - Arquitetura de implantação: [`docs/deploy/arquitetura-aws.md`](docs/deploy/arquitetura-aws.md)
 - Decisão: [`docs/adr/adr-007-deploy-aws-ecs-codepipeline.md`](docs/adr/adr-007-deploy-aws-ecs-codepipeline.md)
 - Pipeline: `buildspecs/` (Segurança, Testes, Imagem) · Task definition e políticas IAM: `deploy/aws/`
+- .
