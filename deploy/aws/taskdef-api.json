@@ -1,0 +1,70 @@
+{
+  "family": "ovitrampas-api",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "runtimePlatform": { "operatingSystemFamily": "LINUX", "cpuArchitecture": "X86_64" },
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<CONTA>:role/ovitrampas-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<CONTA>:role/ovitrampas-api-task-role",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "<CONTA>.dkr.ecr.us-east-2.amazonaws.com/ovitrampas-api:<TAG-DO-PRIMEIRO-BUILD>",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8000, "protocol": "tcp", "name": "api-8000" }],
+      "environment": [
+        { "name": "POSTGRES_HOST", "value": "<ENDPOINT-DO-RDS>" },
+        { "name": "POSTGRES_PORT", "value": "5432" },
+        { "name": "POSTGRES_DB", "value": "ovitrampas" },
+        { "name": "POSTGRES_SSLMODE", "value": "require" },
+        { "name": "REDIS_HOST", "value": "<ENDPOINT-DO-VALKEY>" },
+        { "name": "REDIS_PORT", "value": "6379" },
+        { "name": "REDIS_TLS", "value": "true" },
+        { "name": "OTEL_SERVICE_NAME", "value": "ovitrampas-api" },
+        { "name": "OTEL_RESOURCE_ATTRIBUTES", "value": "deployment.environment=producao" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "http://localhost:4317" },
+        { "name": "OTEL_EXPORTER_OTLP_PROTOCOL", "value": "grpc" },
+        { "name": "OTEL_TRACES_EXPORTER", "value": "otlp" },
+        { "name": "OTEL_METRICS_EXPORTER", "value": "otlp" },
+        { "name": "OTEL_LOGS_EXPORTER", "value": "none" },
+        { "name": "OTEL_PYTHON_LOG_CORRELATION", "value": "true" },
+        { "name": "OTEL_PYTHON_FASTAPI_EXCLUDED_URLS", "value": "/health$" }
+      ],
+      "secrets": [
+        { "name": "POSTGRES_USER", "valueFrom": "<ARN-DO-SEGREDO-DO-RDS>:username::" },
+        { "name": "POSTGRES_PASSWORD", "valueFrom": "<ARN-DO-SEGREDO-DO-RDS>:password::" }
+      ],
+      "dependsOn": [{ "containerName": "adot", "condition": "START" }],
+      "healthCheck": {
+        "command": ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ovitrampas-api",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    },
+    {
+      "name": "adot",
+      "image": "public.ecr.aws/aws-observability/aws-otel-collector:<VERSAO-ADOT>",
+      "essential": false,
+      "command": ["--config=/etc/ecs/ecs-default-config.yaml"],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ovitrampas-api",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "adot"
+        }
+      }
+    }
+  ]
+}

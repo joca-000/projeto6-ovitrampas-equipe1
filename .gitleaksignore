@@ -1,0 +1,12 @@
+# Exceções do gitleaks (fitness function de segurança do estágio Seguranca).
+# Cada linha abaixo de um comentário é o "Fingerprint" copiado do log do gitleaks.
+# Regra do grupo: toda exceção tem justificativa, responsável e data de revisão,
+# e só entra por PR aprovado por quem está no CODEOWNERS.
+
+# Exceção 1: chave AWS FALSA (a do kit da Aula 14, nunca foi válida) escrita
+# por engano no roteiro de deploy, no comando do experimento E2. Achada pelo
+# gitleaks na primeira execução do pipeline (22/11/2026). Corrigida no commit
+# seguinte (a chave passou a ser montada na hora, em duas partes), mas continua
+# no histórico do Git, por isso a exceção.
+# Responsável: joca-000. Revisar em: 05/12/2026 (SR2).
+6a29eb03ff6966ae54c0be2a2f9c4535f1aafac7:docs/deploy/roteiro-aws.md:aws-access-token:390

@@ -1,0 +1,10 @@
+# Quem pode editar o pipeline decide o que ele verifica (apostila da Aula 14, seção 9).
+# Com a branch main protegida e a opção "Require review from Code Owners" ligada,
+# qualquer PR que mexa nestes caminhos precisa da aprovação das pessoas abaixo.
+# Troquem/adicionem os usuários do GitHub responsáveis pela infraestrutura.
+
+/buildspecs/      @joca-000
+/backend/tests/   @joca-000
+/deploy/          @joca-000
+/.github/         @joca-000
+/.gitleaksignore  @joca-000

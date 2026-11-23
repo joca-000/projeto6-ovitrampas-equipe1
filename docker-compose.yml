@@ -94,6 +94,13 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Observabilidade (OpenTelemetry). No PC não há coletor, então os
+      # traces vão para lugar nenhum ("none"). Para VER os spans no terminal
+      # (docker compose logs -f api), troque o primeiro "none" por "console".
+      OTEL_SERVICE_NAME: ovitrampas-api
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-none}
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
     depends_on:
       db:
         condition: service_healthy

@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 .env
 .git/
+.pytest_cache/
+tests/
+requirements-dev.txt

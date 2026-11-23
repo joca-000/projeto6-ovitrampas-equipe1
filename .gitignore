@@ -6,3 +6,4 @@ node_modules/
 .venv/
 *.pt
 *.onnx
+.pytest_cache/
